@@ -1,5 +1,5 @@
 \documentclass[a4paper, 10pt]{article}
-% \usepackage[top=60pt,bottom=60pt,left=48pt,right=46pt]{geometry}
+\usepackage[top=60pt,bottom=60pt,left=90pt,right=90pt]{geometry}
 \usepackage[utf8]{inputenc}
 
 \usepackage{hyperref}
@@ -9,10 +9,13 @@
 \usepackage{subcaption}
 \usepackage{cleveref}
 \usepackage{listings}
+\usepackage{pdfpages}
+\usepackage[toc,page]{appendix}
 
 \renewcommand{\fancyrefdefaultformat}{plain}
 
 \title{xPIN Diode + Sample and Hold + NI-6002 Manual}
+% \author{Jan Kočka}
 
 \begin{document}
 
@@ -112,8 +115,8 @@ The PIN diode is simple to setup as it has no adjustable settings, just connect 
     \label{fig:pin-setup}
 \end{figure}
 
-\subsection{Sample and Hold} \label{subsec:sample-hold}
-The device referred to when written S\&H is a device built in ELI (shown in \cref{fig:sample-hold}) which contains a Sample and Hold amplifier.
+\subsection{Sample and Hold}\label{subsec:sample-hold}
+The device referred to when written S\&H is a device built in ELI (shown in \cref{fig:sample-hold}) which contains a Sample and Hold amplifier (its schematics can be seen in \cref{sec:sample-hold-schema}).
 The Sample and Hold amplifier is made by DATEL and the product page can be found \href{http://catalog.datel.com/item/data-acquisition-product-line/sample-and-hold-amplifiers/shm-43mc}{here}\footnote{http://catalog.datel.com/item/data-acquisition-product-line/sample-and-hold-amplifiers/shm-43mc}.
 
 The device consists of two parts, the gray box contains the power supply and the green one the Sample and Hold amplifier.
@@ -157,7 +160,7 @@ The second behavior is shown in \cref{fig:sample-hold-osci-2}.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth]{../images/sample-hold-osci-2.jpg}
-    \caption{The connections are the same as in \cref{fig:sample-hold-osci} but this time the S\&H trigger is moved a bit in front of the peak. It is possible to see that the yellow line dips a bit just as the S\&H triggers, this is just an artefact of the S\&H it is not a part of the actual signal. It can also be seen that the red line is about 4 \si{\milli\volt} above the yellow line. This is another artefact of the S\&H.}
+    \caption{The connections are the same as in \cref{fig:sample-hold-osci} but this time the S\&H trigger is moved a bit in front of the peak. It is possible to see that the yellow line dips a bit just as the S\&H triggers, this is just an artifact of the S\&H it is not a part of the actual signal. It can also be seen that the red line is about 4 \si{\milli\volt} above the yellow line. This is another artifact of the S\&H.}
     \label{fig:sample-hold-osci-2}
 \end{figure}
 
@@ -296,16 +299,19 @@ First of all when section is written it refers to a group of datapoints between 
 Sections alternate between up and down sections, up sections also having a slope.
 The software always remembers data about the last two sections.
 
-When the software gets a new datapoint, first of all it calculates a value called `diff` in the code.
-This is the difference between the new datapoint and the average of the section that is currently being gathered.
-Then it is checked if the absolute value of `diff` exceeds a parameter caled Edgde Detection Threshold.
+When the software gets a new datapoint, first of all it calculates a value called `diff` in the code, this is the difference between the new datapoint and the last one.
+Then it is checked if the absolute value of `diff` exceeds a parameter caled Edgde Detection Threshold (EDT).
 
 If so, then it checks if `diff` is positive or negative.
 If it is negative, that means that that an up section must have just ended and a down section should have been before it.
 To verify that it checks whether the average of the last section is greater than the average of the previous last section.
-If so it proceeds to get a voltage difference between the two sections and saves it.
-It does this by first also getting the average of the slopes of the last section and then by using the average of the last section it gets an approximate value for the peak.
-It then subtracts the average of the previous last section from it and that is it, this can be seen in \cref{fig:soft-spike-est}.
+If that is the case then it proceeds to get a voltage difference between the two sections and saves it.
+
+It gets the voltage difference by first removing the outliers from each section (this is important for when some of the datapoints land on the edge between sections).
+Then it gets the averages of each section and also the average slope of the up section.
+It then moves the up section average by the average slope to get the actual peak.
+Then it gets the difference between the peak and the average of the down section.
+
 Now going back, if the averages of the two last sections do not match up, it prints a warning message to let the user know that there must have been some anomaly, this feedback can be used to adjust various parameters.
 Going another step back, if `diff` is positive, nothing is done.
 
@@ -320,11 +326,11 @@ However there is another condition, if the absolute value of `diff` is bigger th
 It also resets the values for the last section.
 
 Lastly only if the absolute value of `diff` is lower than EDT, it adds the datapoint to the current section.
-This behavior is important for when multiple datapoints land on the edge between sections.
+This is also important when datapoints land on the edge between sections.
 
 In case a programmer wants to look at the code instead, all of this is in the `\lstinline{handle_processing}` method of `\lstinline{DataAnalyser}`
 
-\subsection{Data Analysis Artefacts}
+\subsection{Data Analysis Artifacts}
 It was mentioned that the captured data is a superposition of the data we want and an underlying function (in our case a sine wave).
 This underlying function does affect the processed data (peak voltages).
 Whenever the gradient of the function is positive, the peak voltages are increased by some magnitude and the other way around.
@@ -337,14 +343,10 @@ This is caused by how the processing works and can be seen in \cref{fig:soft-ys-
     \label{fig:soft-ys-pys-corr}
 \end{figure}
 
-\newpage
+\vspace{10em}
+\appendix
 
-\begin{center}
-As and ending, here is an image of how the entire setup can look like.
-
-\vspace{5em}
-
-\includegraphics[width=\textwidth]{../images/whole-setup.jpg}
-\end{center}
+\section{S\&H Schematic}\label{sec:sample-hold-schema}
+\includegraphics[width=\textwidth]{../appendices/S&H_Scheme.pdf}
 
 \end{document}
