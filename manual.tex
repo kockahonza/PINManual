@@ -375,6 +375,15 @@ This is caused by how the processing works and can be seen in \cref{fig:soft-ys-
     \label{fig:soft-ys-pys-corr}
 \end{figure}
 
+\subsection{Working with saved data}
+When you run the data acquisition you can save the data, you can save in a csv, but it is highly recommended that you save in a hdf5 file as it can save much more data.
+When you save the data in a hdf5 file you can choose what you save, including the raw data on which you can do your own analysis.
+The debug markers are meant to be used by someone who is editing the code, currently they contain data on each detected spike (which is useful when trying to find errors in data analysis).
+
+If you want to analyse the data in python I highly recommend reading up a bit on the \href{https://docs.h5py.org/en/stable/}{h5py} \footnote{https://docs.h5py.org/en/stable/} library and to use matplotlib for the visualisation.
+If you choose to do that, you may find some useful tools in the `util` file/submodule of the PINSoftware module, more information is in the technical documentation.
+
+
 \vspace{10em}
 \appendix
 
