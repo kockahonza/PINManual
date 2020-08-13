@@ -153,29 +153,19 @@ The first thing is that the S\&H needs the TRIG IN signal to reach at least abou
 This is the threshold mentioned before, however it does not actually trigger when TRIG IN reaches the threshold, it triggers when it reaches a smaller value (this is best illustrated in \cref{fig:sample-hold-osci} where you can see the red line triggering when the green line has barely just started going up).
 
 Another thing is that the S\&H changes the input signal.
-When tested using a different signal generator instead of the xPIN, the measured voltage was a linear function of the generated function with coefficient a being about 2 and b being -5 \si{\milli\volt}.
-During first testing with the xPIN it seemed however that the S\&H just added about 4 \si{\milli\volt}.
-The second behavior is shown in \cref{fig:sample-hold-osci-2}.
+By this we don't mean that the signal on SIG OUT is distorted, but that the signal connected to SIG IN gets distorted by connecting the S\&H to it.
+When tested using another signal generator instead of the xPIN, the measured voltage was a linear function of the generated voltage with coefficient a being about 2 and b being -5 \si{\milli\volt}.
+This can be seen in \cref{fig:sample-hold-dist} but this is the xPIN again so the function isn't quite the same.
+The S\&H also adds noise to the signal (SIG IN again), especially around the time the trigger goes up (again visible in \cref{fig:sample-hold-dist}).
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{./images/sample-hold-osci-2.jpg}
-    \caption{The connections are the same as in \cref{fig:sample-hold-osci} but this time the S\&H trigger is moved a bit in front of the peak. It is possible to see that the yellow line dips a bit just as the S\&H triggers, this is just an artifact of the S\&H it is not a part of the actual signal. It can also be seen that the red line is about 4 \si{\milli\volt} above the yellow line. This is another artifact of the S\&H.}
-    \label{fig:sample-hold-osci-2}
-\end{figure}
-
-The S\&H also adds some noise to the signal.
-The signal on SIG OUT is more noisy than the one on SIG IN and it is also delayed a bit (about 20 \si{\nano\second}, visible in \cref{fig:sample-hold-osci}).
-It also distorts the signal on SIG IN itself, this is visible in \cref{fig:sample-hold-dist}.
-
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{0.45\textwidth}
         \includegraphics[width=\textwidth]{./images/sample-hold-pin-clean.jpg}
         \caption{PIN diode output when the S\&H is disconnected.}
         \label{fig:sample-hold-pin-clean}
     \end{subfigure}
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{0.45\textwidth}
         \includegraphics[width=\textwidth]{./images/sample-hold-pin-dist.jpg}
         \caption{PIN diode output when the S\&H is connected.}
         \label{fig:sample-hold-pin-dist}
@@ -184,8 +174,23 @@ It also distorts the signal on SIG IN itself, this is visible in \cref{fig:sampl
     \label{fig:sample-hold-dist}
 \end{figure}
 
-Finally while the S\&H hold the signal, the voltage it outputs slowly decays.
+\newpage
+
+The S\&H does also increases the signal on SIG OUT by a bit compared to the voltage on SIG IN.
+This is visible in \cref{fig:sample-hold-osci-2} and it seemed to be about 4 - 5 \si{\milli\volt} during our testing.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{./images/sample-hold-osci-2.jpg}
+    \caption{The connections are the same as in \cref{fig:sample-hold-osci} but this time the S\&H trigger is moved a bit in front of the peak. It is possible to see that the yellow line dips a bit just as the S\&H triggers, this is just an artifact of the S\&H it is not a part of the actual signal. It can also be seen that the red line is about 4 \si{\milli\volt} above the yellow line. This is another artifact of the S\&H.}
+    \label{fig:sample-hold-osci-2}
+\end{figure}
+
+Finally while the S\&H can hold the signal, the voltage it outputs slowly decays.
 It can be seen in figure \cref{fig:sample-hold-decay} where it decays by about 4 \si{\milli\volt} in just under 500 \si{\micro\second}.
+This can be very relevant when working with a very low voltage!
+Because if the voltage is low, the decay can go below the baseline of the signal (\cref{fig:sample-hold-decay-2}) and this may make data analysis of the data more difficult (especially if the decay ends on the baseline).
+In particular, the provided software will not be able to analyse such data.
 
 \begin{figure}[H]
     \centering
@@ -194,11 +199,18 @@ It can be seen in figure \cref{fig:sample-hold-decay} where it decays by about 4
     \label{fig:sample-hold-decay}
 \end{figure}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{./images/sample-hold-decay-2.jpg}
+    \caption{An image of how the held voltage can decay under the baseline, in this image the xPIN output is connected to yellow and the SIG OUT is connected to blue.}
+    \label{fig:sample-hold-decay-2}
+\end{figure}
+
 \subsection{NI-6002} \label{subsec:sample-hold}
 This is a data acquisition device made by National Instruments, the product page can be found \href{https://www.ni.com/cs-cz/support/model.usb-6002.html}{here}\footnote{https://www.ni.com/cs-cz/support/model.usb-6002.html}.
 This device can do a variety of things but the only thing we need it for is the analog input port (it can capture at frequencies up to 50 \si{\kilo\hertz}).
 We are using it in the single-ended mode, more specifically we have the S\&H output connected to the AI0 and AI GND ports (AI0 is important as otherwise the software won't work with it).
-Along with this you will need a computer with the custom software installed on it.
+Along with this you will need a computer with the custom software installed on it (along with the nidaqmx drivers).
 
 \subsection{Notes on other equipment}
 To use the S\&H it is necessary to get a trigger signal that is synchronised with the photon pulses and both it's delay and width are adjustable.
@@ -212,17 +224,15 @@ The one we use can be seen in \cref{fig:signal-generator}
     \label{fig:signal-generator}
 \end{figure}
 
-The S\&H is also mainly useful to capture the data, however that part is currently not described in the manual so there will be parts necessary for that.
-
-\section{Connecting it together}
+\section{Connecting it together}\label{sec:connecting}
 After you secure the photon source and the trigger signal, set up the diode and check it's output using an oscilloscope (using the trigger signal as a trigger for the oscilloscope).
 Once you get stable data there you can start setting up the S\&H.
 
 First get the signal generator (SG) and set it in "triggered" mode, use the photon trigger signal as the SG trigger.
 Also set the SG to "pulse delay" or equivalent mode, set the delay to 0 and the pulse width to something reasonable.
 Once again you may check on the oscilloscope if it works as expected.
-Then connect the SG output to TRIG IN on the S\&H and if your oscilloscope has enough ports you may also connect the TRIG OUT to it (which will help get the delay right).
-Then connect the PIN output to SIG IN on the S\&H and once again you may use a BNC splitter to also get the raw PIN output.
+Then connect the SG output to TRIG IN on the S\&H and if your oscilloscope has enough ports you may also connect the TRIG OUT to it (which might help get the delay right).
+Then connect the PIN output to SIG IN on the S\&H and once again you may use a BNC splitter to also get the raw PIN output on the oscilloscope.
 The last step is to connect the SIG OUT to the oscilloscope.
 
 Then you need to make some adjustments.
@@ -252,9 +262,15 @@ Once it has been set correctly the voltage during the trigger should rise to be 
 \end{figure}
 
 Now the xPIN + S\&H setup is just about complete, the only thing remaining is to adjust the pulse width and capture the data.
-It is probably best to make the pulse width half the photon pulse frequency as that way it will be the easiest for the acquisition device to capture but it also depends on what exactly you do with it.
+Unless the xPIN voltage is really low it is probably best to make the pulse width half the photon pulse period as that way it will be the easiest for the acquisition device to capture.
+However if the S\&H decay causes the "peak" to cross the baseline (or come close to it) you should make the pulse width shorter.
+This is because the provided sofware can only analyse the data correctly if the "peak" is a peak.
+Also the drop after the peak needs to be at least a certain value (depends on the processing parameter called Edge Detection Threshold).
+
 In \cref{fig:config-width} you can see how the data looks in the big picture.
-You can see that the voltage during the trigger of the S\&H decays slowly but still significantly.
+As mentioned you can see that the voltage during the trigger of the S\&H decays slowly but still significantly.
+Now you need to connect the S\&H SIG OUT to the NI-6002 port AI0 and AI GND.
+Then just connect the device to a the computer and start up the software.
 
 \begin{figure}[H]
     \centering
@@ -272,16 +288,13 @@ You can see that the voltage during the trigger of the S\&H decays slowly but st
     \label{fig:config-width}
 \end{figure}
 
-Now you need to connect the S\&H SIG OUT to the NI-6002 port AI0 and AI GND.
-Then just connect the device to a the computer and start up the software.
-
 \section{Software}
 Instructions on how to install and run the software are in the README file.
 The software is mostly web based and written in Python.
 Once you start the server you can visit the web page on port 8050 (you type `\lstinline{<ip>:8050}` in the url bar in the browser where \lstinline{<ip>} is the ip address of the computer).
 You should get a website with 4 tabs, the two middle ones may be disabled and a warning may pop up on load.
-The rightmost tab is the help tab, there you can find some information on how to use the software.
-The technical documentation of the code itself is distributed with the code itself, here I will provide some notes about the data analysis itself.
+The rightmost tab is the help tab, there you can find some information on how to use the software interface.
+The technical documentation of the code itself is distributed with the code itself and here there will be some notes about the data analysis itself.
 
 \subsection{Data Analysis Description}
 Once the data acquisition starts a thread is created which continuously gathers data from the NI-6002 as fast as possible.
@@ -329,6 +342,25 @@ Lastly only if the absolute value of `diff` is lower than EDT, it adds the datap
 This is also important when datapoints land on the edge between sections.
 
 In case a programmer wants to look at the code instead, all of this is in the `\lstinline{handle_processing}` method of `\lstinline{DataAnalyser}`
+
+\subsection{Setting the correct Edge Detection Threshold}
+This is probably the most unpredictable and complicated step.
+The most important tools for adjusting EDT is the graphing option on the host computer (you can't do this through the web interface) and the peak voltages per second (counts per second) in the live graph in the web interface.
+I should also mention that while the raw data graph is in focus, if you press p, you can stop the graph at the current image (and resume pressing p again).
+If the counts per second don't add up with the expected pulse frequency, something is wrong.
+You can start by observing the approximate spread of the raw data on the raw data graph, EDT can't be too close to that or random noise can be branded as an edge.
+If your peak voltages will be relatively high, this should be all you need, give a sufficient overestimate and all should be fine.
+
+However if you need to detect very small voltages you run into issues as the EDT becomes comparable to your peak voltages.
+Firstly, one of the S\&H artifacts actually helps us, the S\&H always increases the measured voltage by a fixed amount during the trigger, this makes the signal more noticeable.
+Now, again you will need to look at the raw data graph and look at the edges there, you need EDT to be lower than those (you should mostly look at the edges from up to down sections as due to decay those are always smaller).
+Also from experience, the data you see is usually the normal data, every now and then the peak voltage is significantly more or less, so if you want to capture those you need EDT to be lower than it seems you would need.
+
+This was mentioned in \cref{sec:connecting} but it will gone over it again as it can be very important.
+If your peak voltages are really small, you also need to account for the decay.
+The software can only analyse data that looks approximately like the data in the images here.
+It can happen that the held voltage decays below or on the baseline, you would easily notice this in the raw data graph.
+If this happens you can try to adjust the pulse delay so that the peak is shorter but doesn't decay under the baseline, that way the software can still work with it.
 
 \subsection{Data Analysis Artifacts}
 It was mentioned that the captured data is a superposition of the data we want and an underlying function (in our case a sine wave).
