@@ -116,7 +116,7 @@ The PIN diode is simple to setup as it has no adjustable settings, just connect 
 \end{figure}
 
 \subsection{Sample and Hold}\label{subsec:sample-hold}
-The device referred to when written S\&H is a device built in ELI (shown in \cref{fig:sample-hold}) which contains a Sample and Hold amplifier (its schematics can be seen in \cref{sec:sample-hold-schema}).
+The device referred to when written 'S\&H' is a device built in ELI (shown in \cref{fig:sample-hold}) which contains a Sample and Hold amplifier (its schematics can be seen in \cref{sec:sample-hold-schema}).
 The Sample and Hold amplifier is made by DATEL and the product page can be found \href{http://catalog.datel.com/item/data-acquisition-product-line/sample-and-hold-amplifiers/shm-43mc}{here}\footnote{http://catalog.datel.com/item/data-acquisition-product-line/sample-and-hold-amplifiers/shm-43mc}.
 
 The device consists of two parts, the gray box contains the power supply and the green one the Sample and Hold amplifier.
@@ -149,14 +149,26 @@ An image from the S\&H in action is in \cref{fig:sample-hold-osci}.
 \end{figure}
 
 There's some more information that needs to be mentioned however.
-The first thing is that the S\&H needs the TRIG IN signal to reach at least about 5 \si{\volt} (and it's safe to go up to 9) otherwise it won't trigger.
-This is the threshold mentioned before, however it does not actually trigger when TRIG IN reaches the threshold, it triggers when it reaches a smaller value (this is best illustrated in \cref{fig:sample-hold-osci} where you can see the red line triggering when the green line has barely just started going up).
+The first thing is that the S\&H needs the TRIG IN signal to reach at least 5 \si{\volt} (and it's safe to go up to 9) otherwise it won't trigger.
+This is the threshold mentioned before, however if you are monitoring the TRIG OUT signal you may notice that the S\&H triggers before the TRIG OUT reaches the threshold (visible in \cref{fig:sample-hold-osci}) this is due to the internals of the S\&H, TRIG OUT gets delayed from TRIG IN (shown in \cref{fig:sample-hold-trig-delay}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./images/sample-hold-trig-delay.jpg}
+    \caption{This shows how TRIG OUT is delayed with respect to TRIG IN, the yellow line is TRIG IN and the blue one is TRIG OUT}
+    \label{fig:sample-hold-trig-delay}
+\end{figure}
 
 Another thing is that the S\&H changes the input signal.
 By this we don't mean that the signal on SIG OUT is distorted, but that the signal connected to SIG IN gets distorted by connecting the S\&H to it.
-When tested using another signal generator instead of the xPIN, the measured voltage was a linear function of the generated voltage with coefficient a being about 2 and b being -5 \si{\milli\volt}.
-This can be seen in \cref{fig:sample-hold-dist} but this is the xPIN again so the function isn't quite the same.
-The S\&H also adds noise to the signal (SIG IN again), especially around the time the trigger goes up (again visible in \cref{fig:sample-hold-dist}).
+We tested this first with the xPIN (shown in \cref{fig:sample-hold-dist-xpin}) where the signal gets distorted almost beyond recognition but the peak is still visible and the peak voltage clearly changed (almost halved).
+Afterwards we also tested this behavior using another signal generator instead of the xPIN (shown in \cref{fig:sample-hold-dist-sg}) and here the signal doesn't get as distorted but the peak voltage still decreases to about half of what it was before.
+In both cases the S\&H adds noise to the signal at the point when it triggers and when it releases the trigger and it also changes the peak voltage by what seems to be a linear function (based on some collected data from the SG observations).
+
+The S\&H does also increase the signal on SIG OUT by a bit compared to the voltage on SIG IN, in this case we observer the same approximate value for both the xPIN and the signal generator.
+This is visible in \cref{fig:sample-hold-osci-2} and it seemed to be about 4 - 5 \si{\milli\volt} during our testing.
+
+In total it seems like all the distortions introduced by the S\&H to SIG OUT as opposed to the clean input seem to add up to a linear function - based on observations using the signal generator.
 
 \begin{figure}[H]
     \centering
@@ -168,16 +180,25 @@ The S\&H also adds noise to the signal (SIG IN again), especially around the tim
     \begin{subfigure}{0.45\textwidth}
         \includegraphics[width=\textwidth]{./images/sample-hold-pin-dist.jpg}
         \caption{PIN diode output when the S\&H is connected.}
-        \label{fig:sample-hold-pin-dist}
     \end{subfigure}
     \caption{This figure shows how the S\&H distorts its input signal. The connections are again the same as in \cref{fig:sample-hold-osci}.}
-    \label{fig:sample-hold-dist}
+    \label{fig:sample-hold-dist-xpin}
 \end{figure}
 
-\newpage
-
-The S\&H does also increases the signal on SIG OUT by a bit compared to the voltage on SIG IN.
-This is visible in \cref{fig:sample-hold-osci-2} and it seemed to be about 4 - 5 \si{\milli\volt} during our testing.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\textwidth]{./images/sample-hold-sg-clean.jpg}
+        \caption{Signal when the S\&H is disconnected}
+        \label{fig:sample-hold-pin-clean}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+        \includegraphics[width=\textwidth]{./images/sample-hold-sg-dist.jpg}
+        \caption{Signal when the S\&H is connected}
+    \end{subfigure}
+    \caption{This shows how SIG IN gets distorted when the S\&H gets connected. Here a signal generator is used as the signal instead of the xPIN}
+    \label{fig:sample-hold-dist-sg}
+\end{figure}
 
 \begin{figure}[H]
     \centering
@@ -229,9 +250,9 @@ After you secure the photon source and the trigger signal, set up the diode and 
 Once you get stable data there you can start setting up the S\&H.
 
 First get the signal generator (SG) and set it in "triggered" mode, use the photon trigger signal as the SG trigger.
-Also set the SG to "pulse delay" or equivalent mode, set the delay to 0 and the pulse width to something reasonable.
+Also set the SG to "pulse delay" or equivalent mode, set the delay to 0 and the pulse width to something reasonable (something around half the time between pulses).
 Once again you may check on the oscilloscope if it works as expected.
-Then connect the SG output to TRIG IN on the S\&H and if your oscilloscope has enough ports you may also connect the TRIG OUT to it (which might help get the delay right).
+Then connect the SG output to TRIG IN on the S\&H and if your oscilloscope has enough ports you may also connect the either the TRIG OUT or a split signal from TRIG IN to it (which might help to get the pulse delay right).
 Then connect the PIN output to SIG IN on the S\&H and once again you may use a BNC splitter to also get the raw PIN output on the oscilloscope.
 The last step is to connect the SIG OUT to the oscilloscope.
 
@@ -308,7 +329,7 @@ Here a superposition with a sine wave is clearly visible (or maybe a different f
     \label{fig:soft-raw-data}
 \end{figure}
 
-First of all when section is written it refers to a group of datapoints between two sharp edges, it corresponds to when the TRIG IN signal on the S\&H is either on or off, but not currently changing.
+When 'section' is written it refers to a group of datapoints between two sharp edges, it corresponds to when the TRIG IN signal on the S\&H is either on or off, but not currently changing.
 Sections alternate between up and down sections, up sections also having a slope.
 The software always remembers data about the last two sections.
 
@@ -344,8 +365,8 @@ This is also important when datapoints land on the edge between sections.
 In case a programmer wants to look at the code instead, all of this is in the `\lstinline{handle_processing}` method of `\lstinline{DataAnalyser}`
 
 \subsection{Setting the correct Edge Detection Threshold}
-This is probably the most unpredictable and complicated step.
 The most important tools for adjusting EDT is the graphing option on the host computer (you can't do this through the web interface) and the peak voltages per second (counts per second) in the live graph in the web interface.
+The raw data graph cannot be shown in the web interface as that would surely exceed the network speed, however the correct EDT setting mainly depends on the level of noise you get in the setup so once you figure out a good value you can continue using that one.
 I should also mention that while the raw data graph is in focus, if you press p, you can stop the graph at the current image (and resume pressing p again).
 If the counts per second don't add up with the expected pulse frequency, something is wrong.
 You can start by observing the approximate spread of the raw data on the raw data graph, EDT can't be too close to that or random noise can be branded as an edge.
@@ -354,16 +375,15 @@ If your peak voltages will be relatively high, this should be all you need, give
 However if you need to detect very small voltages you run into issues as the EDT becomes comparable to your peak voltages.
 Firstly, one of the S\&H artifacts actually helps us, the S\&H always increases the measured voltage by a fixed amount during the trigger, this makes the signal more noticeable.
 Now, again you will need to look at the raw data graph and look at the edges there, you need EDT to be lower than those (you should mostly look at the edges from up to down sections as due to decay those are always smaller).
-Also from experience, the data you see is usually the normal data, every now and then the peak voltage is significantly more or less, so if you want to capture those you need EDT to be lower than it seems you would need.
+Also bear in mind that you probably won't be able to notice all the data in the raw data graph so what you see is the "normal" data, you should acount for some peaks to be significantly lower (in case of low peak voltages) than the ones you see
 
-This was mentioned in \cref{sec:connecting} but it will gone over it again as it can be very important.
 If your peak voltages are really small, you also need to account for the decay.
 The software can only analyse data that looks approximately like the data in the images here.
 It can happen that the held voltage decays below or on the baseline, you would easily notice this in the raw data graph.
 If this happens you can try to adjust the pulse delay so that the peak is shorter but doesn't decay under the baseline, that way the software can still work with it.
 
 \subsection{Data Analysis Artifacts}
-It was mentioned that the captured data is a superposition of the data we want and an underlying function (in our case a sine wave).
+The captured data is a superposition of the data we want and an underlying function (in our case a sine wave).
 This underlying function does affect the processed data (peak voltages).
 Whenever the gradient of the function is positive, the peak voltages are increased by some magnitude and the other way around.
 This is caused by how the processing works and can be seen in \cref{fig:soft-ys-pys-corr}.
@@ -379,6 +399,7 @@ This is caused by how the processing works and can be seen in \cref{fig:soft-ys-
 When you run the data acquisition you can save the data, you can save in a csv, but it is highly recommended that you save in a hdf5 file as it can save much more data.
 When you save the data in a hdf5 file you can choose what you save, including the raw data on which you can do your own analysis.
 The debug markers are meant to be used by someone who is editing the code, currently they contain data on each detected spike (which is useful when trying to find errors in data analysis).
+In comparison you can only save the processed data in a csv as raw data would take up too much space in the format.
 
 If you want to analyse the data in python I highly recommend reading up a bit on the \href{https://docs.h5py.org/en/stable/}{h5py} \footnote{https://docs.h5py.org/en/stable/} library and to use matplotlib for the visualisation.
 If you choose to do that, you may find some useful tools in the `util` file/submodule of the PINSoftware module, more information is in the technical documentation.
